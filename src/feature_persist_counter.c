@@ -17,15 +17,33 @@ static TextLayer *s_header_layer, *s_body_layer, *s_label_layer,
 /* from tea tutorial */
 *s_error_text_layer, *s_tea_text_layer, *s_countdown_text_layer, *s_cancel_text_layer;
 static GBitmap *s_icon_plus, *s_icon_minus;
-
+static char s_body_text[30];
+static char s_header_text[30];
 static int s_num_drinks = NUM_DRINKS_DEFAULT;
+static float BAC;
 
 /* variables for calculating BAC */
-int m_height, m_weight;
+int m_height;
+int m_weight;
 char m_gender[10];
 char* gender[] = {"male", "female"};
 int height[] = {165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182};
 int weight[] = {65, 70, 75, 80, 85, 90, 95, 100};
+float d_height, d_weight;
+
+static float r_male = 0.68;
+static float r_female = 0.55; 
+static float ALCOHOL_CONTENT = 14.0; 
+/* BLOOD ALCHOL CONTENT FORMULA */
+
+static float BAC_calculator(int t_height, int t_weight, int t_s_num_drinks)
+  {
+  d_height = (float) t_height; 
+  d_weight = (float) t_weight; 
+  return (ALCOHOL_CONTENT*t_s_num_drinks*100)/(r_male*1000*d_weight);
+}
+
+/* END BAC CALCULATIONS */
 
 static char s_tea_text[32];
 
@@ -130,9 +148,25 @@ static void weight_draw_row_handler(GContext *ctx, const Layer *cell_layer, Menu
 }
 
 static void update_text() {
-  static char s_body_text[18];
-  snprintf(s_body_text, sizeof(s_body_text), "%u Platpuses", s_num_drinks);
+  BAC = BAC_calculator(m_height, m_weight, s_num_drinks);
+  int BAC_int = (int)BAC;
+  int BAC_remainder = (int)((BAC-BAC_int) * 1000);
+  if(BAC_remainder < 100)
+    {
+    snprintf(s_body_text, sizeof(s_body_text),"BAC is now %d.0%d", BAC_int, BAC_remainder);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "BAC is now %d.0%d", BAC_int, BAC_remainder);
+  }
+  else
+    {
+    snprintf(s_body_text, sizeof(s_body_text),"BAC is now %d.%d", BAC_int, BAC_remainder);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "BAC is now %d.%d", BAC_int, BAC_remainder); 
+  }
   text_layer_set_text(s_body_layer, s_body_text);
+}
+
+static void update_Platypus() {
+  snprintf(s_header_text, sizeof(s_header_text), "%u Platpuses", s_num_drinks);
+  text_layer_set_text(s_header_layer, s_header_text);
 }
 
 static void increment_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -258,21 +292,30 @@ static void main_window_load(Window *window) {
 
   int width = layer_get_frame(window_layer).size.w - ACTION_BAR_WIDTH - 3;
 
+  
   s_header_layer = text_layer_create(GRect(4, 0, width, 60));
   text_layer_set_font(s_header_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
   text_layer_set_background_color(s_header_layer, GColorClear);
-  text_layer_set_text(s_header_layer, "Drink Counter");
+  text_layer_set_text(s_header_layer, "Happy Hour");
   layer_add_child(window_layer, text_layer_get_layer(s_header_layer));
+  
+  s_header_layer = text_layer_create(GRect(4, 35, width, 60));
+  text_layer_set_font(s_header_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_background_color(s_header_layer, GColorClear);
+  //text_layer_set_text(s_header_layer, "Happy Hour");
+  //text_layer_set_text(s_header_layer, );
+  layer_add_child(window_layer, text_layer_get_layer(s_header_layer));
+  
+  update_Platypus();
 
-  s_body_layer = text_layer_create(GRect(4, 44, width, 60));
+  s_body_layer = text_layer_create(GRect(4, 84, width, 60));
   text_layer_set_font(s_body_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_background_color(s_body_layer, GColorClear);
   layer_add_child(window_layer, text_layer_get_layer(s_body_layer));
-
   s_label_layer = text_layer_create(GRect(4, 44 + 28, width, 60));
   text_layer_set_font(s_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   text_layer_set_background_color(s_label_layer, GColorClear);
-  text_layer_set_text(s_label_layer, "of drinks on the wall");
+ // text_layer_set_text(s_label_layer, "%u Platypuses", s_num_drinks);
   layer_add_child(window_layer, text_layer_get_layer(s_label_layer));
 
   update_text();
