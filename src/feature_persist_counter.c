@@ -21,12 +21,34 @@ static GBitmap *s_icon_plus, *s_icon_minus;
 static int s_num_drinks = NUM_DRINKS_DEFAULT;
 
 /* variables for calculating BAC */
-int m_height, m_weight, m_gender;
+int m_height, m_weight;
+char m_gender[10];
+char* gender[] = {"male", "female"};
 int height[] = {165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182};
 int weight[] = {65, 70, 75, 80, 85, 90, 95, 100};
-int gender[] = {0, 1};
 
 static char s_tea_text[32];
+
+static void gender_select_callback(struct MenuLayer *s_menu_layer, MenuIndex *cell_index, void *callback_context) {
+  // If we were displaying s_error_text_layer, remove it and return
+  if (!layer_get_hidden(text_layer_get_layer(s_error_text_layer))) {
+    layer_set_hidden(text_layer_get_layer(s_error_text_layer), true);
+    return;
+  }
+  char* temp_gender = gender[cell_index->row];
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "gender is %s", temp_gender); 
+  /* //don't need this
+  m_gender[cell_index->row];
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "gender is now %d", m_gender); 
+  */
+  // Switch to s_weight_main_window
+  window_stack_push(s_height_menu_window, false);
+}
+
+static uint16_t gender_get_sections_count_callback(struct MenuLayer *menulayer, uint16_t section_index, void *callback_context) {
+  int count = sizeof(gender);
+  return count;
+}
 
 static void height_select_callback(struct MenuLayer *s_menu_layer, MenuIndex *cell_index, void *callback_context) {
   // If we were displaying s_error_text_layer, remove it and return
@@ -66,6 +88,21 @@ static uint16_t weight_get_sections_count_callback(struct MenuLayer *menulayer, 
   int count = sizeof(weight);
   return count;
 }
+
+/* Gender Draw Row Handler - draws the menu */
+static void gender_draw_row_handler(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *callback_context) {
+ char* name = "";
+ int text_gap_size = TEA_TEXT_GAP - strlen(name);
+ char* temp_gender = gender[cell_index->row];
+
+  // Using simple space padding between name and s_tea_text for appearance of edge-alignment
+ // snprintf(s_tea_text, sizeof(s_tea_text), "%s%*s%d cm", temp_gender, text_gap_size);
+// char* temp_gender = gender[cell_index -> row];
+ // APP_LOG(APP_LOG_LEVEL_DEBUG, "gender is %s", temp_gender); 
+  snprintf(s_tea_text, sizeof(s_tea_text),"%s" ,temp_gender); 
+  menu_cell_basic_draw(ctx, cell_layer, s_tea_text, NULL, NULL);
+}
+
 
 /* Height Draw Row Handler - draws the menu */
 static void height_draw_row_handler(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *callback_context) {
@@ -118,8 +155,37 @@ static void click_config_provider(void *context) {
   window_single_repeating_click_subscribe(BUTTON_ID_DOWN, REPEAT_INTERVAL_MS, decrement_click_handler);
 }
 
-/* HEIGHT MENU WINDOW LOAD */
+/* GENDER MENU WINDOW LOAD */
+static void gender_menu_window_load(Window *window) {
+  Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(window_layer);
 
+  s_menu_layer = menu_layer_create(bounds);
+  menu_layer_set_callbacks(s_menu_layer, NULL, (MenuLayerCallbacks){
+    .get_num_rows = gender_get_sections_count_callback,
+    .draw_row = gender_draw_row_handler,
+    .select_click = gender_select_callback
+  }); 
+  menu_layer_set_click_config_onto_window(s_menu_layer,	window);
+  layer_add_child(window_layer, menu_layer_get_layer(s_menu_layer));
+
+  s_error_text_layer = text_layer_create((GRect) { .origin = {0, 44}, .size = {bounds.size.w, 60}});
+  text_layer_set_text(s_error_text_layer, "Cannot\nschedule");
+  text_layer_set_text_alignment(s_error_text_layer, GTextAlignmentCenter);
+  text_layer_set_font(s_error_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text_color(s_error_text_layer, GColorWhite);
+  text_layer_set_background_color(s_error_text_layer, GColorBlack);
+  layer_set_hidden(text_layer_get_layer(s_error_text_layer), true);
+  layer_add_child(window_layer, text_layer_get_layer(s_error_text_layer));
+}
+
+static void gender_menu_window_unload(Window *window) {
+  menu_layer_destroy(s_menu_layer);
+  text_layer_destroy(s_error_text_layer);
+}
+
+
+/* HEIGHT MENU WINDOW LOAD */
 static void height_menu_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -248,6 +314,13 @@ s_height_menu_window = window_create();
     .unload = height_menu_window_unload,
   });
   window_stack_push(s_height_menu_window, true);
+  
+  s_gender_menu_window = window_create();
+  window_set_window_handlers(s_gender_menu_window, (WindowHandlers){
+    .load = gender_menu_window_load,
+    .unload = gender_menu_window_unload,
+  });
+  window_stack_push(s_gender_menu_window, true);
 }
 
 static void deinit() {
