@@ -10,7 +10,7 @@
 // You can define defaults for values in persistent storage
 #define NUM_DRINKS_DEFAULT 0
 
-static Window *s_main_window, *s_height_menu_window;
+static Window *s_main_window, *s_height_menu_window, *s_weight_menu_window, *s_gender_menu_window; 
 static MenuLayer *s_menu_layer;
 static ActionBarLayer *s_action_bar;
 static TextLayer *s_header_layer, *s_body_layer, *s_label_layer, 
@@ -28,30 +28,66 @@ int gender[] = {0, 1};
 
 static char s_tea_text[32];
 
-static void select_callback(struct MenuLayer *s_menu_layer, MenuIndex *cell_index, void *callback_context) {
+static void height_select_callback(struct MenuLayer *s_menu_layer, MenuIndex *cell_index, void *callback_context) {
   // If we were displaying s_error_text_layer, remove it and return
   if (!layer_get_hidden(text_layer_get_layer(s_error_text_layer))) {
     layer_set_hidden(text_layer_get_layer(s_error_text_layer), true);
     return;
   }
 
-  // Switch to countdown window
-  window_stack_push(s_height_menu_window, false);
+  m_height = height[cell_index->row];
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "height is now %d", m_height); 
+  
+  // Switch to s_weight_main_window
+  window_stack_push(s_weight_menu_window, false);
 }
 
-static uint16_t get_sections_count_callback(struct MenuLayer *menulayer, uint16_t section_index, void *callback_context) {
+static uint16_t height_get_sections_count_callback(struct MenuLayer *menulayer, uint16_t section_index, void *callback_context) {
   int count = sizeof(height);
   return count;
 }
 
-/* Draw Row Handler - draws the menu */
-static void draw_row_handler(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *callback_context) {
+
+static void weight_select_callback(struct MenuLayer *s_menu_layer, MenuIndex *cell_index, void *callback_context) {
+  // If we were displaying s_error_text_layer, remove it and return
+  if (!layer_get_hidden(text_layer_get_layer(s_error_text_layer))) {
+    layer_set_hidden(text_layer_get_layer(s_error_text_layer), true);
+    return;
+  }
+
+  m_weight = weight[cell_index->row];
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "weight is now %d", m_weight); 
+  
+  // Switch to s_main_window
+  window_stack_push(s_main_window, false);
+}
+
+static uint16_t weight_get_sections_count_callback(struct MenuLayer *menulayer, uint16_t section_index, void *callback_context) {
+  int count = sizeof(weight);
+  return count;
+}
+
+/* Height Draw Row Handler - draws the menu */
+static void height_draw_row_handler(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *callback_context) {
   char* name = "";
   int text_gap_size = TEA_TEXT_GAP - strlen(name);
   int temp_height = height[cell_index->row];
 
   // Using simple space padding between name and s_tea_text for appearance of edge-alignment
   snprintf(s_tea_text, sizeof(s_tea_text), "%s%*s%d cm", name, text_gap_size, "", temp_height);
+
+  menu_cell_basic_draw(ctx, cell_layer, s_tea_text, NULL, NULL);
+}
+
+
+/* Weight Draw Row Handler - draws the menu */
+static void weight_draw_row_handler(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *callback_context) {
+  char* name = "";
+  int text_gap_size = TEA_TEXT_GAP - strlen(name);
+  int temp_weight = weight[cell_index->row];
+
+  // Using simple space padding between name and s_tea_text for appearance of edge-alignment
+  snprintf(s_tea_text, sizeof(s_tea_text), "%s%*s%d kg", name, text_gap_size, "", temp_weight);
 
   menu_cell_basic_draw(ctx, cell_layer, s_tea_text, NULL, NULL);
 }
@@ -90,9 +126,39 @@ static void height_menu_window_load(Window *window) {
 
   s_menu_layer = menu_layer_create(bounds);
   menu_layer_set_callbacks(s_menu_layer, NULL, (MenuLayerCallbacks){
-    .get_num_rows = get_sections_count_callback,
-    .draw_row = draw_row_handler,
-    .select_click = select_callback
+    .get_num_rows = height_get_sections_count_callback,
+    .draw_row = height_draw_row_handler,
+    .select_click = height_select_callback
+  }); 
+  menu_layer_set_click_config_onto_window(s_menu_layer,	window);
+  layer_add_child(window_layer, menu_layer_get_layer(s_menu_layer));
+
+  s_error_text_layer = text_layer_create((GRect) { .origin = {0, 44}, .size = {bounds.size.w, 60}});
+  text_layer_set_text(s_error_text_layer, "Cannot\nschedule");
+  text_layer_set_text_alignment(s_error_text_layer, GTextAlignmentCenter);
+  text_layer_set_font(s_error_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text_color(s_error_text_layer, GColorWhite);
+  text_layer_set_background_color(s_error_text_layer, GColorBlack);
+  layer_set_hidden(text_layer_get_layer(s_error_text_layer), true);
+  layer_add_child(window_layer, text_layer_get_layer(s_error_text_layer));
+}
+
+static void weight_menu_window_unload(Window *window) {
+  menu_layer_destroy(s_menu_layer);
+  text_layer_destroy(s_error_text_layer);
+}
+
+/* WEIGHT MENU WINDOW LOAD */
+
+static void weight_menu_window_load(Window *window) {
+  Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(window_layer);
+
+  s_menu_layer = menu_layer_create(bounds);
+  menu_layer_set_callbacks(s_menu_layer, NULL, (MenuLayerCallbacks){
+    .get_num_rows = weight_get_sections_count_callback,
+    .draw_row = weight_draw_row_handler,
+    .select_click = weight_select_callback
   }); 
   menu_layer_set_click_config_onto_window(s_menu_layer,	window);
   layer_add_child(window_layer, menu_layer_get_layer(s_menu_layer));
@@ -155,18 +221,12 @@ static void main_window_unload(Window *window) {
 }
 
 static void init() {
+   
   s_icon_plus = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ACTION_ICON_PLUS);
   s_icon_minus = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ACTION_ICON_MINUS);
 
   // Get the count from persistent storage for use if it exists, otherwise use the default
   s_num_drinks = persist_exists(NUM_DRINKS_PKEY) ? persist_read_int(NUM_DRINKS_PKEY) : NUM_DRINKS_DEFAULT;
-
-  s_height_menu_window = window_create();
-  window_set_window_handlers(s_height_menu_window, (WindowHandlers){
-    .load = height_menu_window_load,
-    .unload = height_menu_window_unload,
-  });
-  window_stack_push(s_height_menu_window, true);
   
   s_main_window = window_create();
   window_set_window_handlers(s_main_window, (WindowHandlers) {
@@ -174,6 +234,20 @@ static void init() {
     .unload = main_window_unload,
   });
   window_stack_push(s_main_window, true);
+
+  s_weight_menu_window = window_create();
+  window_set_window_handlers(s_weight_menu_window, (WindowHandlers){
+    .load = weight_menu_window_load,
+    .unload = weight_menu_window_unload,
+  });
+  window_stack_push(s_weight_menu_window, true);
+  
+s_height_menu_window = window_create();
+  window_set_window_handlers(s_height_menu_window, (WindowHandlers){
+    .load = height_menu_window_load,
+    .unload = height_menu_window_unload,
+  });
+  window_stack_push(s_height_menu_window, true);
 }
 
 static void deinit() {
