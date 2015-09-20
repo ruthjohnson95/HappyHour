@@ -9,13 +9,18 @@
     "resources": {
         "media": [
             {
-                "file": "images/action_icon_plus.png",
-                "name": "IMAGE_ACTION_ICON_PLUS",
+                "file": "images/happyhour1_black.png",
+                "name": "IMAGE_HAPPY",
                 "type": "png"
             },
             {
                 "file": "images/action_icon_minus.png",
                 "name": "IMAGE_ACTION_ICON_MINUS",
+                "type": "png"
+            },
+            {
+                "file": "images/action_icon_plus.png",
+                "name": "IMAGE_ACTION_ICON_PLUS",
                 "type": "png"
             }
         ]
