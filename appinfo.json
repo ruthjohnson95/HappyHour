@@ -9,6 +9,11 @@
     "resources": {
         "media": [
             {
+                "file": "images/uber_white.png",
+                "name": "IMAGE_ACTION_ICON_UBER",
+                "type": "png"
+            },
+            {
                 "file": "images/happyhour1_black.png",
                 "name": "IMAGE_HAPPY",
                 "type": "png"

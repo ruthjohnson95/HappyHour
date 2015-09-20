@@ -18,13 +18,13 @@ static ActionBarLayer *s_action_bar;
 static TextLayer *s_header_layer, *s_body_layer, *s_label_layer, 
 /* from tea tutorial */
 *s_error_text_layer, *s_tea_text_layer, *s_countdown_text_layer, *s_cancel_text_layer;
-static GBitmap *s_icon_plus, *s_icon_minus;
+static GBitmap *s_icon_plus, *s_icon_minus, *s_icon_uber; 
 static char s_body_text[30];
 static char s_header_text[30];
 static int s_num_drinks = NUM_DRINKS_DEFAULT;
 static float BAC;
 bool is_drunk = false; 
-
+bool if_Uber = false; 
 /* variables for calculating BAC */
 int m_height;
 int m_weight;
@@ -198,11 +198,16 @@ static void update_text() {
     snprintf(s_body_text, sizeof(s_body_text),"BAC is now %d.%d", BAC_int, BAC_remainder);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "BAC is now %d.%d", BAC_int, BAC_remainder); 
   }
-  snprintf(s_header_text, sizeof(s_header_text), "%d Platpuses", s_num_drinks);
+  snprintf(s_header_text, sizeof(s_header_text), "%d Drinks", s_num_drinks);
    APP_LOG(APP_LOG_LEVEL_DEBUG, "Number of drinks %d", s_num_drinks);
-  text_layer_set_text(s_header_layer, s_header_text);
+  
+  if(if_Uber)
+    {
+     snprintf(s_header_text, sizeof(s_header_text), "Getting your Uber");
+    snprintf(s_body_text, sizeof(s_body_text), "info now.");
+  }  
+    text_layer_set_text(s_header_layer, s_header_text);
   text_layer_set_text(s_body_layer, s_body_text);
-
 }
 static void update_Platypus() {
   snprintf(s_header_text, sizeof(s_header_text), "%d Platpuses", s_num_drinks);
@@ -233,9 +238,17 @@ static void decrement_click_handler(ClickRecognizerRef recognizer, void *context
   update_text();
 }
 
+static void select_click_handler(ClickRecognizerRef recognizer, void *context){
+ //if pressed Uber button
+  if_Uber = true; 
+     APP_LOG(APP_LOG_LEVEL_DEBUG, "Calling an Uber"); 
+   update_text();
+}
+
 static void click_config_provider(void *context) {
   window_single_repeating_click_subscribe(BUTTON_ID_UP, REPEAT_INTERVAL_MS, increment_click_handler);
   window_single_repeating_click_subscribe(BUTTON_ID_DOWN, REPEAT_INTERVAL_MS, decrement_click_handler);
+  window_single_repeating_click_subscribe(BUTTON_ID_SELECT, REPEAT_INTERVAL_MS, select_click_handler);
 }
 
 /* FIRST MENU WINDOW LOAD */
@@ -377,6 +390,7 @@ static void main_window_load(Window *window) {
 
   action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_plus);
   action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_minus);
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_uber);
 
   int width = layer_get_frame(window_layer).size.w - ACTION_BAR_WIDTH - 3;
 
@@ -422,6 +436,7 @@ static void init() {
    
   s_icon_plus = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ACTION_ICON_PLUS);
   s_icon_minus = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ACTION_ICON_MINUS);
+  s_icon_uber = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ACTION_ICON_UBER);
 
   // Get the count from persistent storage for use if it exists, otherwise use the default
   s_num_drinks = persist_exists(NUM_DRINKS_PKEY) ? persist_read_int(NUM_DRINKS_PKEY) : NUM_DRINKS_DEFAULT;
