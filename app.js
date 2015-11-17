@@ -58,8 +58,8 @@ app.get('/', function (req, res) {
 	console.log(lat);
 	console.log(lon);
 
-	var lat_home = 43.500057;
-	var lon_home = -80.556927;
+	var lat_home = 34.070579;
+	var lon_home = -118.443789;
 
 	uber.estimates.price({
       start_latitude: lat, start_longitude: lon,
@@ -70,6 +70,9 @@ app.get('/', function (req, res) {
       	var est_cost = res.prices[0].estimate;
       	var distance = res.prices[0].distance;
       	var duration = res.prices[0].duration / 60;
+				// var est_cost = 1;
+				// var distance = 5;
+				// var duration = 10;
 
       	sendMessage("+15105658237", "Hello from HappyHour! Your Uber will be here in " + duration + " minutes. Your house is " + distance + " miles away; estimated cost of this trip is " + est_cost + ".");
 
