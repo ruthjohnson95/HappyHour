@@ -24,7 +24,7 @@ var uber = new Uber({
 	client_secret: uberClientSecret,
 	server_token: uberServerToken,
 	redirect_uri: 'http://localhost:' + expressPort + '/auth',
-	name: 'HappyHour' 
+	name: 'HappyHour'
 });
 
 // uber.products.list({ latitude: 43.472547, longitude: -80.539878 }, function (err, res) {
@@ -33,7 +33,7 @@ var uber = new Uber({
 // });
 app.set('port', process.env.PORT || 8001);
 
-function sendMessage(toNum, bodyText){ 
+function sendMessage(toNum, bodyText){
 
 	console.log("Sending to", toNum, ":", bodyText)
 
@@ -61,9 +61,9 @@ app.get('/', function (req, res) {
 	var lat_home = 43.500057;
 	var lon_home = -80.556927;
 
-	uber.estimates.price({ 
-      start_latitude: lat, start_longitude: lon, 
-      end_latitude: lat_home, end_longitude: lon_home 
+	uber.estimates.price({
+      start_latitude: lat, start_longitude: lon,
+      end_latitude: lat_home, end_longitude: lon_home
     }, function (err, res) {
       if (err) console.error(err);
       else {
@@ -71,11 +71,11 @@ app.get('/', function (req, res) {
       	var distance = res.prices[0].distance;
       	var duration = res.prices[0].duration / 60;
 
-      	//sendMessage("+15598022442", "Hello from HappyHour! Your Uber will be here in " + duration + " minutes. Your house is " + distance + " miles away; estimated cost of this trip is " + est_cost + ".");
+      	sendMessage("+15105658237", "Hello from HappyHour! Your Uber will be here in " + duration + " minutes. Your house is " + distance + " miles away; estimated cost of this trip is " + est_cost + ".");
 
       }
     });
-	
+
 });
 
 
